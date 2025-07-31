@@ -9,7 +9,8 @@ A web-based development environment that connects AI assistants (Claude AI or lo
 - **Automatic Arduino integration** - Uses your existing Arduino IDE configuration and installed boards
 - **Dynamic board detection** - Shows only the boards you have cores installed for
 - **Sketch management** - Load existing sketches, save new ones, with automatic context awareness
-- **Project context** - AI understands your current sketch and can suggest improvements or modifications
+- **Project context** - AI understands your current sketch, selected board, and can suggest improvements or modifications
+- **New Chat** - Start fresh conversations with complete context clearing
 - **Sketchbook integration** - Can save sketches to your Arduino sketchbook folder
 - **Direct compilation** - Compile sketches with one click
 - **Automatic upload** - Upload to your boards without leaving the browser  
@@ -84,6 +85,8 @@ A web-based development environment that connects AI assistants (Claude AI or lo
 4. **Test the Connection:**
    - The status should show "Server online"
    - You can test the API at http://localhost:1234/v1/models
+
+**Arduino Vibe Coder automatically maintains conversation context for LMStudio**, so the AI will remember your code and previous questions throughout your session. It also includes your currently selected board in the context for better pin and feature recommendations.
 
 **Recommended Models for Arduino Development:**
 - **CodeLlama-7b-Instruct:** Best overall for code generation
@@ -205,6 +208,8 @@ npm start
 
 **AI Settings Management:** Use the "⚙️ AI Settings" dropdown in the header to switch providers or update API keys.
 
+**New Chat:** Click the "🗨️ New Chat" button or use **Ctrl+Shift+N** (Cmd+Shift+N on Mac) to start a completely fresh conversation with cleared context.
+
 **Sketch Management:** 
 - 📁 Icon = Arduino sketchbook folder
 - 💾 Icon = Local project folder
@@ -235,6 +240,18 @@ AI: "I can see your current LED blink code. Here's how to add button control..."
 ```
 
 ### 5. Advanced Features
+
+**New Chat Functionality:**
+- **🗨️ New Chat button**: Completely clears all conversation history and current code context
+- **Fresh Start**: AI forgets all previous interactions and current project
+- **Keyboard Shortcut**: **Ctrl+Shift+N** (Windows/Linux) or **Cmd+Shift+N** (Mac)
+- **Confirmation**: Asks before clearing to prevent accidental resets
+- **Works with both**: Claude and LMStudio providers
+
+**Context Management:**
+- **Clear History** (LMStudio only): Clears conversation history but keeps current code context
+- **New Chat**: Clears everything for a completely fresh start
+- **Code Loading**: Automatically clears LMStudio history when loading new sketch files
 
 **Library Management:**
 - AI can suggest libraries needed for your project
@@ -341,13 +358,22 @@ The Vibe Coder server provides these endpoints:
 - Ensure a model is loaded in LMStudio (you should see memory usage)
 - Try restarting LMStudio if connection fails
 - Check Windows Firewall isn't blocking localhost connections
+- **Debug steps**: Open browser console (F12) and look for error messages when sending messages
 
-### "LMStudio model issues"
+### "LMStudio not sending messages"
+- **Check browser console (F12)**: Look for debug messages starting with 🤖, 📤, 📨, ✅, or ❌
+- Verify LMStudio shows incoming requests in its log
+- Make sure the model is loaded and responding in LMStudio
+- Try sending a simple test message first: "Hello"
+- Check that LMStudio isn't overloaded or out of memory
+- **Arduino Vibe Coder automatically includes**: current code context, board selection, and conversation history in LMStudio prompts
 - Make sure you have enough RAM for the model size
 - 7B models need ~8GB RAM, 13B models need ~16GB RAM
 - Try a smaller model if you're running out of memory
 - Enable GPU acceleration in LMStudio if you have a compatible GPU
 - Some models work better than others for code generation
+- **Arduino Vibe Coder automatically maintains conversation history for LMStudio** - the AI will remember your previous code and questions
+- If the AI seems to lose context, try asking more specific questions or referencing the current code explicitly
 
 ### "API request failed" errors
 - **Claude:** 401 error = Invalid API key, 429 error = Rate limit exceeded
