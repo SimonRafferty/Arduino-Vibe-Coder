@@ -1,0 +1,1954 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Arduino Vibe Coder</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #1a1a1a;
+            color: #e0e0e0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: #2d2d2d;
+            padding: 0.5rem 1rem;
+            border-bottom: 1px solid #444;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 50px;
+            flex-shrink: 0;
+        }
+
+        .header h1 {
+            color: #00d4aa;
+            font-size: 1.1rem;
+            margin: 0;
+        }
+
+        .header-controls {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .ai-provider-section {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .ai-provider-section.hidden {
+            display: none;
+        }
+
+        .ai-provider-section select {
+            background: #1a1a1a;
+            border: 1px solid #444;
+            border-radius: 4px;
+            padding: 0.3rem;
+            color: #e0e0e0;
+            font-size: 0.8rem;
+        }
+
+        .api-key-input {
+            background: #1a1a1a;
+            border: 1px solid #444;
+            border-radius: 4px;
+            padding: 0.4rem;
+            color: #e0e0e0;
+            width: 180px;
+            font-size: 0.8rem;
+        }
+
+        .connect-btn, .api-dropdown button {
+            background: #00d4aa;
+            color: #1a1a1a;
+            border: none;
+            border-radius: 4px;
+            padding: 0.4rem 0.8rem;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.8rem;
+        }
+
+        .connect-btn:hover, .api-dropdown button:hover {
+            background: #00b894;
+        }
+
+        #new-chat-btn:hover {
+            background: #5f3dc4 !important;
+        }
+
+        .connect-btn.clear-btn {
+            background: #c0392b;
+            color: white;
+        }
+
+        .connect-btn.clear-btn:hover {
+            background: #a93226;
+        }
+
+        #clear-serial-btn:hover {
+            background: #a93226 !important;
+        }
+
+        #pause-serial-btn:hover {
+            opacity: 0.8;
+        }
+
+        .api-dropdown {
+            position: relative;
+        }
+
+        .api-dropdown-content {
+            display: none;
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: #2d2d2d;
+            border: 1px solid #444;
+            border-radius: 4px;
+            padding: 0.5rem;
+            z-index: 1000;
+            min-width: 250px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+
+        .api-dropdown-content.show {
+            display: block;
+        }
+
+        .api-dropdown-content .form-group {
+            margin-bottom: 0.5rem;
+        }
+
+        .api-dropdown-content label {
+            display: block;
+            font-size: 0.75rem;
+            color: #ccc;
+            margin-bottom: 0.25rem;
+        }
+
+        .api-dropdown-content input, .api-dropdown-content select {
+            background: #1a1a1a;
+            border: 1px solid #444;
+            border-radius: 4px;
+            padding: 0.4rem;
+            color: #e0e0e0;
+            width: 100%;
+            margin-bottom: 0.5rem;
+            font-size: 0.8rem;
+        }
+
+        .api-dropdown-content .button-group {
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .status {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+        }
+
+        .status-item {
+            padding: 0.3rem 0.6rem;
+            background: #333;
+            border-radius: 3px;
+            font-size: 0.75rem;
+        }
+
+        .status-item.connected {
+            background: #0a7c42;
+        }
+
+        .ai-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.8rem;
+        }
+
+        .ai-status.connected {
+            color: #27ae60;
+        }
+
+        .ai-status.disconnected {
+            color: #e74c3c;
+        }
+
+        .ai-status button {
+            background: #444;
+            color: #e0e0e0;
+            border: none;
+            border-radius: 4px;
+            padding: 0.3rem 0.6rem;
+            cursor: pointer;
+            font-size: 0.75rem;
+        }
+
+        .ai-status button:hover {
+            background: #555;
+        }
+
+        .main-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+        }
+
+        .chat-section {
+            flex: 2;
+            display: flex;
+            flex-direction: column;
+            border-right: 2px solid #444;
+        }
+
+        .arduino-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background: #252525;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 1rem;
+            background: #1e1e1e;
+        }
+
+        .message {
+            margin-bottom: 1rem;
+            padding: 1rem;
+            border-radius: 8px;
+            max-width: 90%;
+        }
+
+        .message.user {
+            background: #0056b3;
+            margin-left: auto;
+        }
+
+        .message.ai {
+            background: #2d2d2d;
+        }
+
+        .code-block {
+            background: #1a1a1a;
+            border: 1px solid #444;
+            border-radius: 4px;
+            padding: 1rem;
+            margin: 0.5rem 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+
+        .chat-input {
+            padding: 1rem;
+            background: #2d2d2d;
+            border-top: 1px solid #444;
+            display: flex;
+            gap: 0.5rem;
+        }
+
+        .chat-input textarea {
+            flex: 1;
+            background: #1a1a1a;
+            border: 1px solid #444;
+            border-radius: 4px;
+            padding: 0.75rem;
+            color: #e0e0e0;
+            resize: vertical;
+            min-height: 60px;
+            font-family: inherit;
+        }
+
+        .chat-input button {
+            background: #00d4aa;
+            color: #1a1a1a;
+            border: none;
+            border-radius: 4px;
+            padding: 0.75rem 1.5rem;
+            cursor: pointer;
+            font-weight: bold;
+        }
+
+        .chat-input button:hover {
+            background: #00b894;
+        }
+
+        .arduino-controls {
+            padding: 0.75rem;
+            border-bottom: 1px solid #444;
+        }
+
+        .control-group {
+            margin-bottom: 0.75rem;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 0.4rem;
+            font-weight: bold;
+            color: #00d4aa;
+            font-size: 0.85rem;
+        }
+
+        .control-group select,
+        .control-group input {
+            width: 100%;
+            background: #1a1a1a;
+            border: 1px solid #444;
+            border-radius: 4px;
+            padding: 0.4rem;
+            color: #e0e0e0;
+            font-size: 0.85rem;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 0.5rem;
+            margin-top: 0.75rem;
+        }
+
+        .action-buttons button {
+            flex: 1;
+            background: #444;
+            color: #e0e0e0;
+            border: none;
+            border-radius: 4px;
+            padding: 0.6rem;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.85rem;
+        }
+
+        .action-buttons button:hover {
+            background: #555;
+        }
+
+        .action-buttons button.compile {
+            background: #e67e22;
+        }
+
+        .action-buttons button.upload {
+            background: #27ae60;
+        }
+
+        .action-buttons button:disabled {
+            background: #333;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .serial-monitor {
+            flex: 1;
+            padding: 0.75rem;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .serial-output {
+    		width: 100%; /* or set a fixed width if needed */
+    		height: 165px; 
+    		background: #1a1a1a;
+    		border: 1px solid #444;
+    		border-radius: 4px;
+    		padding: 0.75rem;
+    		font-family: 'Courier New', monospace;
+    		font-size: 0.8rem;
+    		color: #0fa;
+    		resize: none; /* Prevent manual resizing */
+    		overflow-y: auto;
+    		overflow-x: hidden;
+    		white-space: pre-wrap; /* Preserve formatting AND allow wrapping */
+    		word-wrap: break-word; /* Break long words */
+    		word-break: break-all; /* Break very long strings */
+    		box-sizing: border-box;
+	}
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid #444;
+            border-radius: 50%;
+            border-top-color: #00d4aa;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error {
+            color: #e74c3c;
+        }
+
+        .success {
+            color: #27ae60;
+        }
+
+        .provider-indicator {
+            font-size: 0.7rem;
+            background: #444;
+            padding: 0.2rem 0.4rem;
+            border-radius: 3px;
+            margin-left: 0.5rem;
+        }
+
+        .provider-indicator.claude {
+            background: #ff6b35;
+            color: white;
+        }
+
+        .provider-indicator.lmstudio {
+            background: #4CAF50;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🤖 Arduino Vibe Coder</h1>
+        <div id="file-protocol-warning" style="display: none; background: #e74c3c; color: white; padding: 0.5rem 1rem; border-radius: 4px; font-weight: bold; font-size: 0.85rem;">
+            ⚠️ WRONG URL! Open http://localhost:3000 instead of opening HTML file directly
+        </div>
+        <div class="header-controls">
+            <!-- Show AI provider selection and connection controls when not connected -->
+            <div class="ai-provider-section" id="ai-provider-section">
+                <select id="ai-provider-select">
+                    <option value="claude">Claude AI</option>
+                    <option value="lmstudio">LMStudio (Local)</option>
+                </select>
+                <input type="password" id="api-key-input" class="api-key-input" placeholder="Enter Claude API key..." />
+                <button type="button" id="connect-btn" class="connect-btn">Connect</button>
+            </div>
+            
+            <!-- Show compact status when connected -->
+            <div class="ai-status disconnected" id="ai-status">
+                <span>⚠️ Select AI Provider</span>
+            </div>
+            
+            <!-- New Chat button (shows when connected) -->
+            <button type="button" id="new-chat-btn" style="display: none; background: #6c5ce7; color: white; border: none; border-radius: 4px; padding: 0.4rem 0.8rem; cursor: pointer; font-weight: bold; font-size: 0.8rem; margin-right: 0.5rem;">🗨️ New Chat</button>
+            
+            <!-- Dropdown for connected state -->
+            <div class="api-dropdown" id="ai-dropdown" style="display: none;">
+                <button type="button" id="ai-settings-btn">⚙️ AI Settings</button>
+                <div class="api-dropdown-content" id="ai-dropdown-content">
+                    <div class="form-group">
+                        <label>AI Provider:</label>
+                        <select id="ai-provider-update">
+                            <option value="claude">Claude AI</option>
+                            <option value="lmstudio">LMStudio (Local)</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="api-key-update-group">
+                        <label>API Key:</label>
+                        <input type="password" id="api-key-update" placeholder="Enter new API key..." />
+                    </div>
+                    <div class="button-group">
+                        <button type="button" id="update-btn">Update</button>
+                        <button type="button" id="clear-history-btn" style="background: #f39c12;">Clear History</button>
+                        <button type="button" id="clear-btn" class="clear-btn">Clear</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="status">
+                <div class="status-item" id="arduino-status">CLI: Checking...</div>
+                <div class="status-item" id="board-status">No Board</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-container">
+        <div class="chat-section">
+            <div class="chat-messages" id="chat-messages">
+                <div class="message ai">
+                    <strong>AI Assistant:</strong> Hi! I'm your Arduino development assistant. <span id="welcome-message">Select an AI provider above to get started, then ask me to write code for your projects!</span>
+                </div>
+            </div>
+            
+            <div class="chat-input">
+                <textarea id="user-input" placeholder="Ask AI to write Arduino code..."></textarea>
+                <button type="button" id="send-btn">Send</button>
+            </div>
+        </div>
+
+        <div class="arduino-section">
+            <div class="arduino-controls">
+                <div class="control-group">
+                    <label for="current-sketch-display">Current Sketch:</label>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <input type="text" id="current-sketch-display" readonly style="flex: 1; background: #333; color: #ccc; cursor: default;" placeholder="No sketch loaded" />
+                        <button type="button" id="browse-files-btn" style="padding: 0.4rem 0.8rem; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">📁 Browse</button>
+                    </div>
+                    <input type="file" id="file-input" accept=".ino" style="display: none;" />
+                </div>
+
+                <div class="control-group">
+                    <label for="sketch-name">Sketch Name:</label>
+                    <div style="display: flex; gap: 0.5rem;">
+                        <input type="text" id="sketch-name" value="my_sketch" placeholder="Enter sketch name" style="flex: 1;" />
+                        <button type="button" id="save-sketch-btn" style="padding: 0.4rem 0.8rem; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.75rem;">Save</button>
+                    </div>
+                    <div id="current-sketch-info" style="font-size: 0.75rem; color: #888; margin-top: 0.25rem;">No sketch loaded</div>
+                </div>
+
+                <div class="control-group">
+                    <label for="board-select">Board:</label>
+                    <select id="board-select">
+                        <option value="">Loading boards...</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label for="port-select">Port:</label>
+                    <select id="port-select">
+                        <option value="">Select Port...</option>
+                    </select>
+                    <button type="button" id="refresh-ports-btn" style="margin-top: 0.5rem; width: 100%; padding: 0.4rem; background: #444; color: #e0e0e0; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8rem;">Refresh Ports</button>
+                </div>
+
+                <div class="action-buttons">
+                    <button type="button" class="compile" id="compile-btn">Compile</button>
+                    <button type="button" class="upload" id="upload-btn">Upload</button>
+                </div>
+            </div>
+
+            <div class="serial-monitor">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <label style="color: #00d4aa; font-weight: bold; font-size: 0.85rem;">Serial Monitor</label>
+                    <div style="display: flex; gap: 0.5rem; align-items: center;">
+                        <label style="font-size: 0.75rem; color: #ccc;">Baud:</label>
+                        <select id="baud-select" style="background: #1a1a1a; border: 1px solid #444; border-radius: 3px; padding: 0.25rem; color: #e0e0e0; font-size: 0.75rem;">
+                            <option value="9600">9600</option>
+                            <option value="19200">19200</option>
+                            <option value="38400">38400</option>
+                            <option value="57600">57600</option>
+                            <option value="115200">115200</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="serial-output" id="serial-output">Waiting for serial data...</div>
+                <div style="display: flex; gap: 0.5rem; margin-top: 0.5rem;">
+                    <button type="button" id="read-serial-btn" style="flex: 1; padding: 0.4rem; font-size: 0.85rem;">Read Serial</button>
+                    <button type="button" id="pause-serial-btn" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; background: #f39c12; color: white; border: none; border-radius: 4px; cursor: pointer;">⏸️ Pause</button>
+                    <button type="button" id="clear-serial-btn" style="padding: 0.4rem 0.8rem; font-size: 0.85rem; background: #c0392b; color: white; border: none; border-radius: 4px; cursor: pointer;">Clear</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let currentCode = '';
+        let currentSketchName = '';
+        let currentAIProvider = 'claude';
+        let claudeApiKey = '';
+        let serialPaused = false;
+        let currentFileDirectory = '';
+        let conversationHistory = []; // For LMStudio context management
+
+        // Helper function to clear LMStudio conversation history
+        function clearLMStudioHistory() {
+            if (currentAIProvider === 'lmstudio') {
+                conversationHistory = [];
+                console.log('Cleared LMStudio conversation history');
+            }
+        }
+
+        // Function to manually clear conversation history (for Clear History button)
+        function clearConversationHistory() {
+            if (currentAIProvider === 'lmstudio') {
+                conversationHistory = [];
+                addMessage('ai', '🧹 Conversation history cleared. I\'ll start fresh while still knowing about your current code.');
+                console.log('Manually cleared LMStudio conversation history');
+            } else {
+                addMessage('ai', '💡 Claude automatically manages conversation history. You can start a new conversation at any time!');
+            }
+            document.getElementById('ai-dropdown-content').classList.remove('show');
+        }
+
+        // Function to start a completely new chat session
+        function startNewChat() {
+            if (!confirm('Start a new chat? This will clear all conversation history and current code context.')) {
+                return;
+            }
+
+            // Clear all context
+            conversationHistory = [];
+            currentCode = '';
+            currentSketchName = '';
+            
+            // Clear UI elements
+            document.getElementById('sketch-name').value = 'my_sketch';
+            updateCurrentSketchDisplay('', '');
+            document.getElementById('current-sketch-info').textContent = 'No sketch loaded';
+            
+            // Clear chat messages
+            const messagesContainer = document.getElementById('chat-messages');
+            messagesContainer.innerHTML = '';
+            
+            // Add fresh start message
+            const providerName = currentAIProvider === 'claude' ? 'Claude' : 'LMStudio';
+            addMessage('ai', `🆕 New chat started! All previous context has been cleared. I'm ${providerName} and I'm ready to help you with Arduino development. What would you like to build?`);
+            
+            console.log('🆕 New chat session started - all context cleared');
+        }
+
+        // AI Provider Management Functions
+        function setAIProvider() {
+            const providerSelect = document.getElementById('ai-provider-select');
+            const provider = providerSelect.value;
+            
+            if (provider === 'lmstudio') {
+                connectToLMStudio();
+            } else if (provider === 'claude') {
+                const apiKeyInput = document.getElementById('api-key-input');
+                const apiKey = apiKeyInput.value.trim();
+                
+                if (!apiKey) {
+                    alert('Please enter your Claude API key');
+                    return;
+                }
+
+                if (!apiKey.startsWith('sk-ant-')) {
+                    alert('Claude API keys should start with "sk-ant-"');
+                    return;
+                }
+
+                saveApiKey(apiKey);
+                apiKeyInput.value = '';
+                currentAIProvider = 'claude';
+                conversationHistory = []; // Clear LMStudio conversation history when switching to Claude
+                showConnectedState();
+                
+                addMessage('ai', 'Claude API connected and saved! I\'m ready to help you with Arduino development. What would you like to build?');
+            }
+        }
+
+        async function connectToLMStudio() {
+            try {
+                // Test LMStudio connection
+                const response = await fetch('/api/lmstudio/health');
+                const data = await response.json();
+                
+                if (data.status === 'connected') {
+                    currentAIProvider = 'lmstudio';
+                    conversationHistory = []; // Clear conversation history when switching to LMStudio
+                    saveAIProvider('lmstudio');
+                    showConnectedState();
+                    
+                    addMessage('ai', `LMStudio connected successfully! Found ${data.models.length} model(s). Ready to help with Arduino development!
+                    
+💡 **Context Management**: I'll remember our conversation and your current code throughout this session. You can ask questions about code I've generated or modifications to existing sketches.`);
+                } else {
+                    alert('Cannot connect to LMStudio. Make sure LMStudio is running on localhost:1234');
+                }
+            } catch (error) {
+                console.error('LMStudio connection error:', error);
+                alert('Cannot connect to LMStudio. Make sure LMStudio is running on localhost:1234');
+            }
+        }
+
+        function updateAISettings() {
+            const providerSelect = document.getElementById('ai-provider-update');
+            const provider = providerSelect.value;
+            
+            if (provider === 'lmstudio') {
+                connectToLMStudio();
+            } else if (provider === 'claude') {
+                const apiKeyInput = document.getElementById('api-key-update');
+                const apiKey = apiKeyInput.value.trim();
+                
+                if (!apiKey) {
+                    alert('Please enter your Claude API key');
+                    return;
+                }
+
+                if (!apiKey.startsWith('sk-ant-')) {
+                    alert('Claude API keys should start with "sk-ant-"');
+                    return;
+                }
+
+                saveApiKey(apiKey);
+                apiKeyInput.value = '';
+                currentAIProvider = 'claude';
+                conversationHistory = []; // Clear LMStudio conversation history when switching to Claude
+                document.getElementById('ai-dropdown-content').classList.remove('show');
+                
+                addMessage('ai', 'Claude API updated successfully!');
+            }
+        }
+
+        function saveApiKey(apiKey) {
+            try {
+                localStorage.setItem('claude-api-key', apiKey);
+                claudeApiKey = apiKey;
+                console.log('API key saved to localStorage');
+            } catch (error) {
+                console.error('Error saving API key:', error);
+                alert('Warning: Could not save API key for future sessions');
+            }
+        }
+
+        function saveAIProvider(provider) {
+            try {
+                localStorage.setItem('ai-provider', provider);
+                console.log('AI provider saved:', provider);
+            } catch (error) {
+                console.error('Error saving AI provider:', error);
+            }
+        }
+
+        function clearSerialBuffer() {
+            const serialOutput = document.getElementById('serial-output');
+            serialOutput.textContent = 'Waiting for serial data...';
+            serialOutput.style.color = '#0fa';
+        }
+
+        function toggleSerialPause() {
+            serialPaused = !serialPaused;
+            const pauseBtn = document.getElementById('pause-serial-btn');
+            
+            if (serialPaused) {
+                pauseBtn.textContent = '▶️ Play';
+                pauseBtn.style.background = '#27ae60';
+                console.log('Serial monitor paused');
+            } else {
+                pauseBtn.textContent = '⏸️ Pause';
+                pauseBtn.style.background = '#f39c12';
+                console.log('Serial monitor resumed');
+            }
+        }
+
+        function clearAISettings() {
+            if (!confirm('Are you sure you want to clear your saved AI settings?')) {
+                return;
+            }
+
+            try {
+                localStorage.removeItem('claude-api-key');
+                localStorage.removeItem('ai-provider');
+                console.log('AI settings cleared');
+            } catch (error) {
+                console.error('Error clearing AI settings:', error);
+            }
+
+            claudeApiKey = '';
+            currentAIProvider = 'claude';
+            conversationHistory = []; // Clear LMStudio conversation history
+            document.getElementById('api-key-input').value = '';
+            document.getElementById('api-key-update').value = '';
+            document.getElementById('ai-dropdown-content').classList.remove('show');
+            
+            showDisconnectedState();
+            addMessage('ai', 'AI settings cleared. Please select and configure an AI provider to continue.');
+        }
+
+        function toggleAIDropdown() {
+            const dropdown = document.getElementById('ai-dropdown-content');
+            dropdown.classList.toggle('show');
+            
+            // Update the provider selection in dropdown
+            document.getElementById('ai-provider-update').value = currentAIProvider;
+        }
+
+        // UI State Management
+        function loadSavedAISettings() {
+            try {
+                const savedProvider = localStorage.getItem('ai-provider') || 'claude';
+                const savedKey = localStorage.getItem('claude-api-key');
+                
+                currentAIProvider = savedProvider;
+                document.getElementById('ai-provider-select').value = savedProvider;
+                
+                if (savedProvider === 'claude' && savedKey && savedKey.startsWith('sk-ant-')) {
+                    claudeApiKey = savedKey;
+                    showConnectedState();
+                    
+                    const welcomeMsg = document.getElementById('welcome-message');
+                    if (welcomeMsg) {
+                        welcomeMsg.textContent = 'I\'m connected and ready! What Arduino project would you like to work on?';
+                    }
+                    
+                    console.log('Loaded saved Claude API key');
+                } else if (savedProvider === 'lmstudio') {
+                    // Try to reconnect to LMStudio silently
+                    connectToLMStudioSilent();
+                } else {
+                    showDisconnectedState();
+                    console.log('No saved AI settings found');
+                }
+            } catch (error) {
+                console.error('Error loading saved AI settings:', error);
+                showDisconnectedState();
+            }
+        }
+
+        async function connectToLMStudioSilent() {
+            try {
+                const response = await fetch('/api/lmstudio/health');
+                const data = await response.json();
+                
+                if (data.status === 'connected') {
+                    showConnectedState();
+                    
+                    const welcomeMsg = document.getElementById('welcome-message');
+                    if (welcomeMsg) {
+                        welcomeMsg.textContent = 'LMStudio connected! What Arduino project would you like to work on?';
+                    }
+                    
+                    console.log('Reconnected to LMStudio');
+                } else {
+                    showDisconnectedState();
+                }
+            } catch (error) {
+                console.log('LMStudio not available on startup');
+                showDisconnectedState();
+            }
+        }
+
+        function loadSavedBoardAndPort() {
+            try {
+                const savedBoard = localStorage.getItem('selected-board');
+                const savedPort = localStorage.getItem('selected-port');
+                
+                if (savedBoard) {
+                    const boardSelect = document.getElementById('board-select');
+                    setTimeout(() => {
+                        if (Array.from(boardSelect.options).some(option => option.value === savedBoard)) {
+                            boardSelect.value = savedBoard;
+                            console.log('Loaded saved board:', savedBoard);
+                        }
+                    }, 1000);
+                }
+                
+                if (savedPort) {
+                    const portSelect = document.getElementById('port-select');
+                    setTimeout(() => {
+                        if (Array.from(portSelect.options).some(option => option.value === savedPort)) {
+                            portSelect.value = savedPort;
+                            console.log('Loaded saved port:', savedPort);
+                        }
+                    }, 1000);
+                }
+            } catch (error) {
+                console.error('Error loading saved board/port:', error);
+            }
+        }
+
+        function saveBoardSelection(board) {
+            try {
+                if (board) {
+                    localStorage.setItem('selected-board', board);
+                    console.log('Saved board selection:', board);
+                } else {
+                    localStorage.removeItem('selected-board');
+                }
+            } catch (error) {
+                console.error('Error saving board selection:', error);
+            }
+        }
+
+        function savePortSelection(port) {
+            try {
+                if (port) {
+                    localStorage.setItem('selected-port', port);
+                    console.log('Saved port selection:', port);
+                } else {
+                    localStorage.removeItem('selected-port');
+                }
+            } catch (error) {
+                console.error('Error saving port selection:', error);
+            }
+        }
+
+        function showConnectedState() {
+            document.getElementById('ai-provider-section').style.display = 'none';
+            document.getElementById('ai-status').className = 'ai-status connected';
+            
+            const providerName = currentAIProvider === 'claude' ? 'Claude' : 'LMStudio';
+            const providerClass = currentAIProvider === 'claude' ? 'claude' : 'lmstudio';
+            
+            document.getElementById('ai-status').innerHTML = `<span>✅ ${providerName} Connected</span><span class="provider-indicator ${providerClass}">${providerName}</span>`;
+            document.getElementById('ai-dropdown').style.display = 'block';
+            document.getElementById('new-chat-btn').style.display = 'inline-block'; // Show new chat button
+            
+            // Show/hide API key field based on provider
+            const apiKeyGroup = document.getElementById('api-key-update-group');
+            const clearHistoryBtn = document.getElementById('clear-history-btn');
+            
+            if (currentAIProvider === 'lmstudio') {
+                apiKeyGroup.style.display = 'none';
+                clearHistoryBtn.style.display = 'inline-block'; // Show clear history for LMStudio
+            } else {
+                apiKeyGroup.style.display = 'block';
+                clearHistoryBtn.style.display = 'none'; // Hide clear history for Claude
+            }
+        }
+
+        function showDisconnectedState() {
+            document.getElementById('ai-provider-section').style.display = 'flex';
+            document.getElementById('ai-status').className = 'ai-status disconnected';
+            document.getElementById('ai-status').innerHTML = '<span>⚠️ Select AI Provider</span>';
+            document.getElementById('ai-dropdown').style.display = 'none';
+            document.getElementById('new-chat-btn').style.display = 'none'; // Hide new chat button
+            
+            // Show/hide API key input based on selected provider
+            const apiKeyInput = document.getElementById('api-key-input');
+            const providerSelect = document.getElementById('ai-provider-select');
+            
+            if (providerSelect.value === 'lmstudio') {
+                apiKeyInput.style.display = 'none';
+            } else {
+                apiKeyInput.style.display = 'block';
+            }
+        }
+
+        // Update UI when provider selection changes
+        function onProviderChange() {
+            const providerSelect = document.getElementById('ai-provider-select');
+            const apiKeyInput = document.getElementById('api-key-input');
+            
+            if (providerSelect.value === 'lmstudio') {
+                apiKeyInput.style.display = 'none';
+                apiKeyInput.placeholder = '';
+            } else {
+                apiKeyInput.style.display = 'block';
+                apiKeyInput.placeholder = 'Enter Claude API key...';
+            }
+        }
+
+        // File browsing functionality
+        function setupFileBrowser() {
+            const browseBtn = document.getElementById('browse-files-btn');
+            const fileInput = document.getElementById('file-input');
+            
+            if (!browseBtn || !fileInput) {
+                console.error('Browse button or file input not found');
+                return;
+            }
+            
+            browseBtn.addEventListener('click', () => {
+                fileInput.click();
+            });
+            
+            fileInput.addEventListener('change', async (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
+                
+                if (!file.name.endsWith('.ino')) {
+                    alert('Please select an Arduino sketch file (.ino)');
+                    return;
+                }
+                
+                try {
+                    const content = await file.text();
+                    const fileName = file.name.replace('.ino', '');
+                    
+                    currentCode = content;
+                    currentSketchName = fileName;
+                    
+                    // Clear LMStudio conversation history when loading new code (fresh context)
+                    if (currentAIProvider === 'lmstudio') {
+                        conversationHistory = [];
+                        console.log('🧹 Cleared LMStudio history for new code context');
+                    }
+                    
+                    document.getElementById('sketch-name').value = fileName;
+                    updateCurrentSketchDisplay(fileName, 'from file');
+                    document.getElementById('current-sketch-info').textContent = `Loaded from file: ${file.name}`;
+                    
+                    addMessage('ai', `📂 Loaded sketch "${fileName}" from your computer`, false);
+                    addMessage('ai', content, true);
+                    
+                    console.log(`Loaded sketch from file: ${file.name}`);
+                    fileInput.value = '';
+                    
+                } catch (error) {
+                    console.error('Error reading file:', error);
+                    alert('Error reading the selected file');
+                }
+            });
+        }
+
+        // Sketch Management Functions
+        function updateCurrentSketchDisplay(sketchName, source = '') {
+            const displayField = document.getElementById('current-sketch-display');
+            if (sketchName) {
+                displayField.value = sketchName + (source ? ` (${source})` : '');
+            } else {
+                displayField.value = '';
+                displayField.placeholder = 'No sketch loaded';
+            }
+        }
+
+        async function saveCurrentSketch() {
+            const sketchName = document.getElementById('sketch-name').value.trim();
+            
+            if (!sketchName) {
+                alert('Please enter a sketch name');
+                return;
+            }
+
+            if (!currentCode) {
+                alert('No code to save. Ask AI to generate some Arduino code first!');
+                return;
+            }
+
+            try {
+                if ('showSaveFilePicker' in window) {
+                    await saveWithFileSystemAPI(sketchName);
+                } else {
+                    await saveWithDownload(sketchName);
+                }
+            } catch (error) {
+                if (error.name === 'AbortError') {
+                    console.log('Save cancelled by user');
+                    return;
+                }
+                console.error('Error saving sketch:', error);
+                await saveWithDownload(sketchName);
+            }
+        }
+
+        async function saveWithFileSystemAPI(sketchName) {
+            try {
+                const fileHandle = await window.showSaveFilePicker({
+                    suggestedName: `${sketchName}.ino`,
+                    types: [{
+                        description: 'Arduino Sketch files',
+                        accept: { 'text/plain': ['.ino'] }
+                    }]
+                });
+                
+                const writable = await fileHandle.createWritable();
+                await writable.write(currentCode);
+                await writable.close();
+                
+                currentSketchName = sketchName;
+                updateCurrentSketchDisplay(sketchName, 'saved');
+                document.getElementById('current-sketch-info').textContent = `Saved: ${sketchName}`;
+                addMessage('ai', `💾 Sketch saved as "${sketchName}" to selected location`, false);
+                
+            } catch (error) {
+                throw error;
+            }
+        }
+
+        async function saveWithDownload(sketchName) {
+            const blob = new Blob([currentCode], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${sketchName}.ino`;
+            
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+            
+            currentSketchName = sketchName;
+            updateCurrentSketchDisplay(sketchName, 'downloaded');
+            document.getElementById('current-sketch-info').textContent = `Downloaded: ${sketchName}`;
+            addMessage('ai', `💾 Sketch "${sketchName}" downloaded - choose save location in your browser's download dialog`, false);
+        }
+
+        // Arduino Integration Functions  
+        async function checkArduinoStatus() {
+            try {
+                const response = await fetch('/api/health');
+                const data = await response.json();
+                
+                const statusElement = document.getElementById('arduino-status');
+                if (data.arduino_cli) {
+                    statusElement.textContent = 'CLI: Ready';
+                    statusElement.classList.add('connected');
+                } else {
+                    statusElement.textContent = 'CLI: Missing';
+                    statusElement.classList.remove('connected');
+                }
+            } catch (error) {
+                document.getElementById('arduino-status').textContent = 'CLI: Error';
+            }
+        }
+
+        async function loadArduinoConfig() {
+            try {
+                const response = await fetch('/api/config');
+                const data = await response.json();
+                
+                if (data.success && data.sketchbookPath && data.sketchbookPath !== 'Not found') {
+                    console.log('Arduino sketchbook folder:', data.sketchbookPath);
+                }
+            } catch (error) {
+                console.error('Error loading Arduino config:', error);
+            }
+        }
+
+        async function loadAvailableBoards() {
+            try {
+                const response = await fetch('/api/boards/available');
+                const data = await response.json();
+                
+                const boardSelect = document.getElementById('board-select');
+                const savedBoard = localStorage.getItem('selected-board');
+                boardSelect.innerHTML = '<option value="">Select Board...</option>';
+                
+                if (data.success && data.stdout) {
+                    const lines = data.stdout.split('\n');
+                    const boards = [];
+                    
+                    lines.forEach(line => {
+                        const match = line.match(/^(.+?)\s+([a-zA-Z0-9_]+:[a-zA-Z0-9_]+:[a-zA-Z0-9_]+.*?)$/);
+                        if (match) {
+                            const [, name, fqbn] = match;
+                            boards.push({ name: name.trim(), fqbn: fqbn.trim() });
+                        }
+                    });
+                    
+                    boards.sort((a, b) => a.name.localeCompare(b.name));
+                    
+                    boards.forEach(board => {
+                        const option = document.createElement('option');
+                        option.value = board.fqbn;
+                        option.textContent = board.name;
+                        boardSelect.appendChild(option);
+                    });
+                    
+                    if (savedBoard && Array.from(boardSelect.options).some(option => option.value === savedBoard)) {
+                        boardSelect.value = savedBoard;
+                    }
+                    
+                    console.log(`Loaded ${boards.length} boards from your Arduino installation`);
+                } else {
+                    const fallbackBoards = [
+                        { name: 'ESP32 Dev Module', fqbn: 'esp32:esp32:esp32' },
+                        { name: 'ESP32-S3', fqbn: 'esp32:esp32:esp32s3' },
+                        { name: 'ESP32-C3', fqbn: 'esp32:esp32:esp32c3' },
+                        { name: 'Arduino Uno', fqbn: 'arduino:avr:uno' },
+                        { name: 'Arduino Nano', fqbn: 'arduino:avr:nano' },
+                        { name: 'Arduino Mega', fqbn: 'arduino:avr:mega' },
+                        { name: 'Teensy 4.0', fqbn: 'teensy:avr:teensy40' },
+                        { name: 'Teensy 4.1', fqbn: 'teensy:avr:teensy41' }
+                    ];
+                    
+                    fallbackBoards.forEach(board => {
+                        const option = document.createElement('option');
+                        option.value = board.fqbn;
+                        option.textContent = board.name;
+                        boardSelect.appendChild(option);
+                    });
+                    
+                    if (savedBoard && Array.from(boardSelect.options).some(option => option.value === savedBoard)) {
+                        boardSelect.value = savedBoard;
+                    }
+                    
+                    console.log('Using fallback board list (install cores with Arduino CLI for more options)');
+                }
+            } catch (error) {
+                console.error('Error loading available boards:', error);
+            }
+        }
+
+        async function refreshPorts() {
+            try {
+                const response = await fetch('/api/boards');
+                const data = await response.json();
+                
+                const portSelect = document.getElementById('port-select');
+                const savedPort = localStorage.getItem('selected-port');
+                portSelect.innerHTML = '<option value="">Select Port...</option>';
+                
+                if (data.success && data.stdout) {
+                    const lines = data.stdout.split('\n');
+                    lines.forEach(line => {
+                        if (line.includes('COM') || line.includes('/dev/')) {
+                            const parts = line.split(/\s+/);
+                            const port = parts[0];
+                            if (port) {
+                                const option = document.createElement('option');
+                                option.value = port;
+                                option.textContent = line.trim();
+                                portSelect.appendChild(option);
+                            }
+                        }
+                    });
+                    
+                    if (savedPort && Array.from(portSelect.options).some(option => option.value === savedPort)) {
+                        portSelect.value = savedPort;
+                    }
+                }
+            } catch (error) {
+                console.error('Error refreshing ports:', error);
+            }
+        }
+
+        // Message and Chat Functions
+        function addMessage(sender, content, isCode = false) {
+            const messagesContainer = document.getElementById('chat-messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${sender}`;
+            
+            if (isCode) {
+                messageDiv.innerHTML = `<strong>${sender === 'user' ? 'You' : 'AI Assistant'}:</strong><div class="code-block">${content}</div>`;
+                if (sender === 'ai') {
+                    currentCode = content;
+                    const sketchName = document.getElementById('sketch-name').value || 'Untitled';
+                    updateCurrentSketchDisplay(sketchName, 'generated');
+                }
+            } else {
+                messageDiv.innerHTML = `<strong>${sender === 'user' ? 'You' : 'AI Assistant'}:</strong> ${content}`;
+            }
+            
+            messagesContainer.appendChild(messageDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+        }
+
+        async function sendMessage() {
+            console.log('🚀 sendMessage() called');
+            console.log('🔧 Current AI Provider:', currentAIProvider);
+            
+            const input = document.getElementById('user-input');
+            const message = input.value.trim();
+            
+            console.log('📝 Message:', message);
+            console.log('🔑 Claude API Key exists:', !!claudeApiKey);
+            
+            if (!message) {
+                console.log('❌ Empty message, returning');
+                return;
+            }
+            
+            if (currentAIProvider === 'claude' && !claudeApiKey) {
+                console.log('❌ Claude selected but no API key');
+                alert('Please configure Claude API key first');
+                return;
+            }
+            
+            console.log('✅ Pre-checks passed, proceeding with message sending');
+            
+            addMessage('user', message);
+            input.value = '';
+            
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'message ai';
+            loadingDiv.innerHTML = '<strong>AI Assistant:</strong> <span class="loading"></span> Thinking...';
+            const messagesContainer = document.getElementById('chat-messages');
+            messagesContainer.appendChild(loadingDiv);
+            messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            
+            try {
+                // Get current board for context
+                const currentBoard = document.getElementById('board-select').value;
+                const boardText = currentBoard ? 
+                    `\n\nCURRENT SELECTED BOARD: ${currentBoard}\nConsider this board's capabilities, pin configurations, and specific features when providing code suggestions.` : 
+                    '\n\nNo board currently selected.';
+
+                let systemPrompt = `You are an Arduino development assistant. Help users write, debug, and improve Arduino code. When you provide Arduino code, make sure it's complete and ready to compile. Focus on practical, working solutions for embedded development.
+
+Key guidelines:
+- Provide complete, compilable Arduino sketches
+- Include necessary #include statements and library dependencies
+- Use clear variable names and add helpful comments
+- Suggest appropriate pin numbers and configurations
+- Mention any required libraries or board configurations
+- For ESP32, Teensy, and other advanced boards, use their specific features when beneficial${boardText}`;
+
+                // Use different system prompts for different AI providers
+                let lmstudioSystemPrompt = `You are a precise Arduino code assistant. Your responses must be concise and focused.
+
+CRITICAL FORMATTING RULES:
+- When providing Arduino code, use ONLY this format: \`\`\`cpp followed by the code, then \`\`\`
+- NO explanations before or after code blocks unless specifically requested
+- NO unnecessary commentary or stories
+- Code must be properly indented and immediately compilable
+- Include only essential #include statements
+- Use appropriate pin numbers for the target board
+
+RESPONSE STYLE:
+- Be direct and concise
+- Provide working, tested code patterns
+- Only explain if the user asks "how" or "why"
+- Focus on practical, compilable solutions${boardText}`;
+
+                if (currentCode && currentSketchName) {
+                    const codeContext = `
+
+CURRENT PROJECT CONTEXT:
+The user is currently working on a sketch called "${currentSketchName}". Here is the current code:
+
+\`\`\`cpp
+${currentCode}
+\`\`\`
+
+When the user asks questions or requests modifications, consider this existing code as context. You can:
+- Suggest improvements to the existing code
+- Help debug issues in the current sketch
+- Add new features to the existing project
+- Explain how the current code works
+- Optimize or refactor the existing code
+
+If the user asks for completely new code, you can still reference patterns or approaches from their current project.`;
+                    
+                    systemPrompt += codeContext;
+                    lmstudioSystemPrompt += codeContext;
+                }
+
+                let response;
+                if (currentAIProvider === 'claude') {
+                    const claudeRequest = {
+                        apiKey: claudeApiKey,
+                        model: 'claude-sonnet-4-20250514',
+                        max_tokens: 4000,
+                        system: systemPrompt,
+                        messages: [{ role: 'user', content: message }]
+                    };
+                    
+                    console.log('📤 CLAUDE REQUEST DEBUG:');
+                    console.log('=======================');
+                    console.log('🔧 Model:', claudeRequest.model);
+                    console.log('🔧 Max Tokens:', claudeRequest.max_tokens);
+                    console.log('📝 System Prompt:');
+                    console.log(claudeRequest.system);
+                    console.log('💬 User Messages:');
+                    claudeRequest.messages.forEach((msg, index) => {
+                        console.log(`  ${index + 1}. ${msg.role}: ${msg.content}`);
+                    });
+                    console.log('=======================');
+                    
+                    response = await fetch('/api/claude', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(claudeRequest)
+                    });
+                } else if (currentAIProvider === 'lmstudio') {
+                    console.log('🤖 LMStudio branch selected');
+                    console.log('📚 Current conversation history length:', conversationHistory.length);
+                    
+                    // Add current user message to history
+                    conversationHistory.push({ role: 'user', content: message });
+                    console.log('➕ Added user message to history');
+                    
+                    // Use the specialized LMStudio system prompt
+                    let finalLMStudioPrompt = lmstudioSystemPrompt;
+                    
+                    // If we have current code, always include it in the system prompt for LMStudio
+                    if (currentCode) {
+                        console.log('💾 Including current code in prompt');
+                        finalLMStudioPrompt += `
+
+IMPORTANT - CURRENT CODE IN EDITOR:
+The user currently has this Arduino code loaded in their editor:
+
+\`\`\`cpp
+${currentCode}
+\`\`\`
+
+When the user asks questions, they are likely referring to this code. Always consider this code as the primary context for your responses.`;
+                    } else {
+                        console.log('📝 No current code to include');
+                    }
+                    
+                    // Build messages array with full conversation history
+                    const messages = [
+                        { role: 'system', content: finalLMStudioPrompt },
+                        ...conversationHistory
+                    ];
+                    
+                    const requestBody = {
+                        messages: messages,
+                        temperature: 0.3, // Lower temperature for more focused responses
+                        max_tokens: 4000
+                    };
+                    
+                    console.log('📤 LMSTUDIO REQUEST DEBUG:');
+                    console.log('=========================');
+                    console.log('🔧 Temperature:', requestBody.temperature);
+                    console.log('🔧 Max Tokens:', requestBody.max_tokens);
+                    console.log('📝 Current Board:', currentBoard || 'None selected');
+                    console.log('💾 Current Code Length:', currentCode ? currentCode.length : 0);
+                    console.log('📚 Total Messages:', messages.length);
+                    console.log('📝 Full System Prompt:');
+                    console.log(finalLMStudioPrompt);
+                    console.log('💬 Full Conversation History:');
+                    messages.forEach((msg, index) => {
+                        const truncatedContent = msg.content.length > 200 ? 
+                            msg.content.substring(0, 200) + '...' : 
+                            msg.content;
+                        console.log(`  ${index + 1}. ${msg.role}: ${truncatedContent}`);
+                    });
+                    console.log('🌐 Raw Request Body:');
+                    console.log(JSON.stringify(requestBody, null, 2));
+                    console.log('=========================');
+                    
+                    console.log('🌐 Making fetch request to /api/lmstudio');
+                    
+                    response = await fetch('/api/lmstudio', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(requestBody)
+                    });
+                    
+                    console.log('📨 Fetch completed, response status:', response.status);
+                }
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error('❌ API Error:', errorData);
+                    throw new Error(errorData.error || `API request failed: ${response.status}`);
+                }
+
+                const data = await response.json();
+                console.log('✅ Received response data:', data);
+                loadingDiv.remove();
+                
+                if (data.content && data.content[0] && data.content[0].text) {
+                    const aiResponse = data.content[0].text;
+                    console.log('💬 AI Response length:', aiResponse.length);
+                    
+                    // For LMStudio, add AI response to conversation history
+                    if (currentAIProvider === 'lmstudio') {
+                        conversationHistory.push({ role: 'assistant', content: aiResponse });
+                        
+                        // Keep conversation history manageable (last 20 messages = 10 exchanges)
+                        if (conversationHistory.length > 20) {
+                            conversationHistory = conversationHistory.slice(-20);
+                            console.log('🧹 Trimmed LMStudio conversation history to last 20 messages');
+                        }
+                        console.log(`📚 Conversation history now has ${conversationHistory.length} messages`);
+                    }
+                    
+                    const codeMatch = aiResponse.match(/```(?:cpp|arduino|c\+\+)?\n([\s\S]*?)\n```/);
+                    
+                    if (codeMatch) {
+                        const code = codeMatch[1];
+                        const textPart = aiResponse.replace(codeMatch[0], '').trim();
+                        
+                        if (textPart) {
+                            addMessage('ai', textPart);
+                        }
+                        addMessage('ai', code, true);
+                    } else {
+                        addMessage('ai', aiResponse);
+                    }
+                } else {
+                    console.error('❌ Unexpected response format:', data);
+                    addMessage('ai', 'Sorry, I received an unexpected response from the AI.');
+                }
+                
+            } catch (error) {
+                loadingDiv.remove();
+                console.error('💥 AI API error:', error);
+                
+                let errorMessage = `Sorry, there was an error connecting to ${currentAIProvider === 'claude' ? 'Claude' : 'LMStudio'}. `;
+                if (error.message.includes('401')) {
+                    errorMessage += 'Please check your API key is correct.';
+                } else if (error.message.includes('429')) {
+                    errorMessage += 'Rate limit exceeded. Please wait a moment and try again.';
+                } else if (error.message.includes('LMStudio not running')) {
+                    errorMessage += 'Make sure LMStudio is running on localhost:1234.';
+                } else {
+                    errorMessage += `Please check your connection and try again. Error: ${error.message}`;
+                }
+                
+                addMessage('ai', errorMessage);
+            }
+        }
+
+        // Arduino Compile and Upload Functions
+        async function compileSketch() {
+            const board = document.getElementById('board-select').value;
+            const sketchName = document.getElementById('sketch-name').value || 'temp_sketch';
+            
+            if (!board) {
+                alert('Please select a board');
+                return;
+            }
+            
+            if (!currentCode) {
+                alert('No code to compile. Ask AI to generate some Arduino code first!');
+                return;
+            }
+            
+            const compileBtn = document.getElementById('compile-btn');
+            compileBtn.disabled = true;
+            compileBtn.innerHTML = '<span class="loading"></span> Compiling...';
+            
+            try {
+                const response = await fetch('/api/compile', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        board: board,
+                        code: currentCode,
+                        name: sketchName
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    addMessage('ai', `✅ Compilation successful!\n\n${result.stdout}`, false);
+                } else {
+                    addMessage('ai', `❌ Compilation failed! Error details have been placed in the input box below - click Send to ask me to fix it.`, false);
+                    
+                    const userInput = document.getElementById('user-input');
+                    const errorMessage = `Sketch failed to compile. Please re-write the sketch in full with a fix for this error:\n\n${result.stderr || result.error}`;
+                    userInput.value = errorMessage;
+                    userInput.focus();
+                    userInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            } catch (error) {
+                addMessage('ai', `❌ Error during compilation: ${error.message}`, false);
+            } finally {
+                compileBtn.disabled = false;
+                compileBtn.textContent = 'Compile';
+            }
+        }
+
+        async function uploadSketch() {
+            const board = document.getElementById('board-select').value;
+            const port = document.getElementById('port-select').value;
+            const sketchName = document.getElementById('sketch-name').value || 'temp_sketch';
+            
+            if (!board || !port) {
+                alert('Please select both board and port');
+                return;
+            }
+            
+            if (!currentCode) {
+                alert('No code to upload. Ask AI to generate some Arduino code first!');
+                return;
+            }
+            
+            const uploadBtn = document.getElementById('upload-btn');
+            uploadBtn.disabled = true;
+            uploadBtn.innerHTML = '<span class="loading"></span> Uploading...';
+            
+            try {
+                const response = await fetch('/api/upload', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        board: board,
+                        port: port,
+                        code: currentCode,
+                        name: sketchName
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    addMessage('ai', `✅ Upload successful!\n\n${result.stdout}`, false);
+                    document.getElementById('board-status').textContent = `Connected`;
+                    document.getElementById('board-status').classList.add('connected');
+                } else {
+                    addMessage('ai', `❌ Upload failed:\n\n${result.stderr || result.error}`, false);
+                }
+            } catch (error) {
+                addMessage('ai', `❌ Error during upload: ${error.message}`, false);
+            } finally {
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = 'Upload';
+            }
+        }
+
+        // Serial Monitor Functions
+        async function readSerial() {
+            const port = document.getElementById('port-select').value;
+            const baud = document.getElementById('baud-select').value;
+            
+            if (!port) {
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/monitor-direct/${port}?timeout=5&baud=${baud}`);
+                const result = await response.json();
+                
+                if (!serialPaused && result.success && result.stdout && result.stdout.trim()) {
+                    const serialOutput = document.getElementById('serial-output');
+                    
+                    let currentContent = serialOutput.textContent;
+                    
+                    if (currentContent === 'Waiting for serial data...') {
+                        currentContent = '';
+                    }
+                    
+                    const newData = result.stdout.trim();
+                    if (currentContent) {
+                        currentContent += '\n' + newData;
+                    } else {
+                        currentContent = newData;
+                    }
+                    
+                    const lines = currentContent.split('\n');
+                    if (lines.length > 1000) {
+                        currentContent = lines.slice(-1000).join('\n');
+                    }
+                    
+                    serialOutput.textContent = currentContent;
+                    serialOutput.style.color = '#0fa';
+                    serialOutput.scrollTop = serialOutput.scrollHeight;
+                }
+                
+                if (result.stderr && result.stderr.trim() && !result.stderr.includes('No data via direct spawn method')) {
+                    if (!serialPaused) {
+                        const serialOutput = document.getElementById('serial-output');
+                        const errorText = `Error: ${result.stderr}`;
+                        let currentContent = serialOutput.textContent;
+                        
+                        if (currentContent === 'Waiting for serial data...') {
+                            currentContent = errorText;
+                        } else {
+                            currentContent += '\n' + errorText;
+                        }
+                        
+                        serialOutput.textContent = currentContent;
+                        serialOutput.style.color = '#e74c3c';
+                        serialOutput.scrollTop = serialOutput.scrollHeight;
+                    }
+                }
+            } catch (error) {
+                if (!serialPaused) {
+                    const serialOutput = document.getElementById('serial-output');
+                    const errorText = `Connection error: ${error.message}`;
+                    let currentContent = serialOutput.textContent;
+                    
+                    if (currentContent === 'Waiting for serial data...') {
+                        currentContent = errorText;
+                    } else {
+                        currentContent += '\n' + errorText;
+                    }
+                    
+                    serialOutput.textContent = currentContent;
+                    serialOutput.style.color = '#e74c3c';
+                    serialOutput.scrollTop = serialOutput.scrollHeight;
+                }
+            }
+        }
+
+        function saveBaudSelection(baud) {
+            try {
+                if (baud) {
+                    localStorage.setItem('selected-baud', baud);
+                    console.log('Saved baud selection:', baud);
+                }
+            } catch (error) {
+                console.error('Error saving baud selection:', error);
+            }
+        }
+
+        function loadSavedBaud() {
+            try {
+                const savedBaud = localStorage.getItem('selected-baud') || '9600';
+                const baudSelect = document.getElementById('baud-select');
+                baudSelect.value = savedBaud;
+                console.log('Loaded saved baud rate:', savedBaud);
+            } catch (error) {
+                console.error('Error loading saved baud rate:', error);
+            }
+        }
+
+        // Initialize everything
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Arduino Vibe Coder initializing...');
+            console.log('🔧 Initial AI Provider:', currentAIProvider);
+            
+            // Check if page is opened directly from file system
+            if (window.location.protocol === 'file:') {
+                document.getElementById('file-protocol-warning').style.display = 'block';
+                console.error('❌ Page opened directly from file system. Use http://localhost:3000 instead.');
+            }
+            
+            console.log('📚 Loading saved AI settings...');
+            loadSavedAISettings();
+            console.log('🔧 AI Provider after loading settings:', currentAIProvider);
+            
+            loadSavedBaud();
+            checkArduinoStatus();
+            loadArduinoConfig();
+            loadAvailableBoards();
+            refreshPorts();
+            
+            setupFileBrowser();
+            
+            // Event listeners
+            console.log('🔗 Setting up event listeners...');
+            
+            const sendBtn = document.getElementById('send-btn');
+            const userInput = document.getElementById('user-input');
+            
+            if (!sendBtn) {
+                console.error('❌ Send button not found!');
+            } else {
+                console.log('✅ Send button found, adding click listener');
+                sendBtn.addEventListener('click', function() {
+                    console.log('🖱️ Send button clicked!');
+                    sendMessage();
+                });
+            }
+            
+            if (!userInput) {
+                console.error('❌ User input not found!');
+            } else {
+                console.log('✅ User input found, adding enter key listener');
+                userInput.addEventListener('keydown', function(e) {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                        console.log('⌨️ Enter key pressed!');
+                        e.preventDefault();
+                        sendMessage();
+                    }
+                });
+            }
+            
+            // AI Provider events
+            document.getElementById('ai-provider-select').addEventListener('change', onProviderChange);
+            document.getElementById('connect-btn').addEventListener('click', setAIProvider);
+            document.getElementById('ai-settings-btn').addEventListener('click', toggleAIDropdown);
+            document.getElementById('update-btn').addEventListener('click', updateAISettings);
+            document.getElementById('new-chat-btn').addEventListener('click', startNewChat);
+            
+            // Add clear history button listener if it exists
+            const clearHistoryBtn = document.getElementById('clear-history-btn');
+            if (clearHistoryBtn) {
+                console.log('✅ Clear history button found, adding listener');
+                clearHistoryBtn.addEventListener('click', clearConversationHistory);
+            } else {
+                console.log('⚠️ Clear history button not found (this is normal)');
+            }
+            
+            document.getElementById('clear-btn').addEventListener('click', clearAISettings);
+            
+            // Arduino-related events
+            console.log('🔗 Setting up Arduino event listeners...');
+            
+            const saveSketchBtn = document.getElementById('save-sketch-btn');
+            const refreshPortsBtn = document.getElementById('refresh-ports-btn');
+            const compileBtn = document.getElementById('compile-btn');
+            const uploadBtn = document.getElementById('upload-btn');
+            const readSerialBtn = document.getElementById('read-serial-btn');
+            const pauseSerialBtn = document.getElementById('pause-serial-btn');
+            const clearSerialBtn = document.getElementById('clear-serial-btn');
+            
+            if (saveSketchBtn) {
+                saveSketchBtn.addEventListener('click', saveCurrentSketch);
+                console.log('✅ Save sketch button listener added');
+            } else {
+                console.error('❌ Save sketch button not found!');
+            }
+            
+            if (refreshPortsBtn) {
+                refreshPortsBtn.addEventListener('click', refreshPorts);
+                console.log('✅ Refresh ports button listener added');
+            } else {
+                console.error('❌ Refresh ports button not found!');
+            }
+            
+            if (compileBtn) {
+                compileBtn.addEventListener('click', compileSketch);
+                console.log('✅ Compile button listener added');
+            } else {
+                console.error('❌ Compile button not found!');
+            }
+            
+            if (uploadBtn) {
+                uploadBtn.addEventListener('click', uploadSketch);
+                console.log('✅ Upload button listener added');
+            } else {
+                console.error('❌ Upload button not found!');
+            }
+            
+            if (readSerialBtn) {
+                readSerialBtn.addEventListener('click', readSerial);
+                console.log('✅ Read serial button listener added');
+            } else {
+                console.error('❌ Read serial button not found!');
+            }
+            
+            if (pauseSerialBtn) {
+                pauseSerialBtn.addEventListener('click', toggleSerialPause);
+                console.log('✅ Pause serial button listener added');
+            } else {
+                console.error('❌ Pause serial button not found!');
+            }
+            
+            if (clearSerialBtn) {
+                clearSerialBtn.addEventListener('click', clearSerialBuffer);
+                console.log('✅ Clear serial buffer button listener added');
+            } else {
+                console.error('❌ Clear serial buffer button not found!');
+            }
+            
+            // Save selections when they change
+            document.getElementById('board-select').addEventListener('change', function(e) {
+                saveBoardSelection(e.target.value);
+            });
+            
+            document.getElementById('port-select').addEventListener('change', function(e) {
+                savePortSelection(e.target.value);
+            });
+            
+            document.getElementById('baud-select').addEventListener('change', function(e) {
+                saveBaudSelection(e.target.value);
+            });
+            
+            // Enter key handlers for API keys
+            document.getElementById('api-key-input').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    setAIProvider();
+                }
+            });
+            
+            document.getElementById('api-key-update').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    updateAISettings();
+                }
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(event) {
+                const dropdown = document.getElementById('ai-dropdown');
+                const dropdownContent = document.getElementById('ai-dropdown-content');
+                
+                if (dropdown && !dropdown.contains(event.target)) {
+                    dropdownContent.classList.remove('show');
+                }
+            });
+
+            // Keyboard shortcuts
+            document.addEventListener('keydown', function(e) {
+                // Ctrl/Cmd + Shift + N for New Chat
+                if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === 'N') {
+                    e.preventDefault();
+                    const newChatBtn = document.getElementById('new-chat-btn');
+                    if (newChatBtn && newChatBtn.style.display !== 'none') {
+                        startNewChat();
+                    }
+                }
+            });
+
+            console.log('✅ All event listeners set up successfully');
+            document.getElementById('send-btn').addEventListener('click', sendMessage);
+            document.getElementById('save-sketch-btn').addEventListener('click', saveCurrentSketch);
+            document.getElementById('refresh-ports-btn').addEventListener('click', refreshPorts);
+            document.getElementById('compile-btn').addEventListener('click', compileSketch);
+            document.getElementById('upload-btn').addEventListener('click', uploadSketch);
+            document.getElementById('read-serial-btn').addEventListener('click', readSerial);
+            document.getElementById('pause-serial-btn').addEventListener('click', toggleSerialPause);
+            document.getElementById('clear-serial-btn').addEventListener('click', clearSerialBuffer);
+            
+            // Save selections when they change
+            document.getElementById('board-select').addEventListener('change', function(e) {
+                saveBoardSelection(e.target.value);
+            });
+            
+            document.getElementById('port-select').addEventListener('change', function(e) {
+                savePortSelection(e.target.value);
+            });
+            
+            document.getElementById('baud-select').addEventListener('change', function(e) {
+                saveBaudSelection(e.target.value);
+            });
+            
+            // Enter key handlers
+            document.getElementById('api-key-input').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    setAIProvider();
+                }
+            });
+            
+            document.getElementById('api-key-update').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    updateAISettings();
+                }
+            });
+            
+            document.getElementById('user-input').addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    sendMessage();
+                }
+            });
+            
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(event) {
+                const dropdown = document.getElementById('ai-dropdown');
+                const dropdownContent = document.getElementById('ai-dropdown-content');
+                
+                if (dropdown && !dropdown.contains(event.target)) {
+                    dropdownContent.classList.remove('show');
+                }
+            });
+
+            // Test the send button functionality
+            console.log('🧪 Testing send button click...');
+            const testSendBtn = document.getElementById('send-btn');
+            if (testSendBtn) {
+                console.log('✅ Send button element found');
+                console.log('🔧 Send button onclick:', testSendBtn.onclick);
+                console.log('🔧 Send button class:', testSendBtn.className);
+                console.log('🔧 Send button disabled:', testSendBtn.disabled);
+            } else {
+                console.error('❌ CRITICAL: Send button not found in DOM!');
+            }
+
+            // Initial UI update based on selected provider
+            onProviderChange();
+            
+            console.log('✅ Arduino Vibe Coder initialization complete!');
+        });
+
+        // Make functions available globally for debugging
+        window.testSendMessage = sendMessage;
+        window.testCompileSketch = compileSketch;
+        window.testUploadSketch = uploadSketch;
+        window.testNewChat = startNewChat;
+        window.debugInfo = function() {
+            console.log('🔧 Debug Info:');
+            console.log('- Current AI Provider:', currentAIProvider);
+            console.log('- Claude API Key exists:', !!claudeApiKey);
+            console.log('- Conversation History length:', conversationHistory.length);
+            console.log('- Current Code length:', currentCode ? currentCode.length : 0);
+            console.log('- Current Sketch Name:', currentSketchName || 'None');
+            console.log('- Send button exists:', !!document.getElementById('send-btn'));
+            console.log('- Compile button exists:', !!document.getElementById('compile-btn'));
+            console.log('- Upload button exists:', !!document.getElementById('upload-btn'));
+            console.log('- New Chat button exists:', !!document.getElementById('new-chat-btn'));
+        };
+        setInterval(() => {
+            const port = document.getElementById('port-select').value;
+            if (port) {
+                console.log('📡 *** TIMER TRIGGERED - CALLING readSerial() ***');
+                readSerial();
+            }
+        }, 3000);
+
+    </script>
+</body>
+</html>
